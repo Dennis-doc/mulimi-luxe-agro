@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luxe Agro Business - Marketplace</title>
+    <!-- Chart.js for Auto-Graphing Price Changes -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        *, *::before, *::after {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        input, textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        :root {
+            --bg-color: #0f172a;
+            --surface: #1e293b;
+            --surface-card: #273548;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --border: #334155;
+            --primary: #22c55e;
+            --primary-hover: #16a34a;
+            --accent-red: #ef4444;
+        }
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --surface: #ffffff;
+            --surface-card: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #cbd5e1;
+            --primary: #16a34a;
+            --primary-hover: #15803d;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-color); color: var(--text);
+            margin: 0; padding: 0; padding-bottom: 75px; transition: background 0.3s, color 0.3s;
+        }
+
+        /* Splash Screen Animation */
+        #splashScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #090d16;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .splash-icon {
+            font-size: 50px;
+            animation: floatPlant 1.5s ease-in-out infinite alternate;
+            margin-bottom: 15px;
+        }
+        .splash-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+        }
+        @keyframes floatPlant {
+            0% { transform: translateY(0px) scale(1); }
+            100% { transform: translateY(-10px) scale(1.05); }
+        }
+
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 55px;
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 12px; box-sizing: border-box; z-index: 1000;
+        }
+        .brand-area { display: flex; align-items: center; gap: 8px; }
+        .brand { font-weight: 700; color: var(--primary); font-size: 13px; line-height: 1.2; }
+        .header-actions { display: flex; align-items: center; gap: 5px; }
+        .menu-btn, .refresh-btn { 
+            background: var(--surface-card); color: var(--text); 
+            border: 1px solid var(--border); padding: 6px 8px; 
+            border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px; 
+            white-space: nowrap;
+        }
+
+        /* Stable Drawer */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; }
+        .drawer { position: fixed; top: 0; left: -300px; width: 260px; height: 100%; background: var(--surface); border-right: 1px solid var(--border); z-index: 2100; transition: left 0.3s ease; padding: 24px 16px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .drawer.open { left: 0; }
+        .drawer-header { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .drawer-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; margin: 6px 0; background: var(--surface-card); border: 1px solid var(--border); border-radius: 6px; text-align: left; font-weight: 500; cursor: pointer; color: var(--text); font-size: 14px; }
+        .drawer-item:hover { background: var(--border); }
+
+        .container { margin-top: 75px; padding: 16px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .search-box { 
+            width: 100%; padding: 12px 14px; background: var(--surface-card); color: var(--text); 
+            border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 14px; margin-bottom: 16px; outline: none; 
+        }
+
+        /* Market Cards */
+        .market-card { 
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px; 
+            padding: 16px; margin-bottom: 16px; display: flex; gap: 14px; align-items: flex-start; 
+        }
+        .market-thumb { width: 65px; height: 65px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: var(--surface-card); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--muted); }
+        .market-details { flex-grow: 1; }
+        .market-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+        .market-price-area { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+        .market-price { font-size: 16px; font-weight: 700; color: var(--primary); }
+        .old-price { font-size: 13px; color: var(--muted); text-decoration: line-through; }
+        .market-meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+        .market-desc { font-size: 13px; color: var(--muted); line-height: 1.4; margin-bottom: 10px; }
+        
+        .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .btn { 
+            background: var(--primary); color: #fff; border: none; padding: 6px 12px; 
+            border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; 
+        }
+        .btn:hover { background: var(--primary-hover); }
+        .upvote-btn { background: var(--surface-card); border: 1px solid var(--border); color: var(--text); }
+
+        /* Terms & Policy Modal / Container */
+        #termsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+        .terms-box { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+        .team-grid { display: flex; gap: 12px; justify-content: space-around; text-align: center; margin-top: 12px; }
+        .team-member { flex: 1; background: var(--surface-card); border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
+        .team-img { width: 100%; max-width: 110px; height: 110px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+        .team-label { font-size: 13px; font-weight: 700; color: var(--primary); margin-top: 6px; }
+        .team-phone { font-size: 12px; color: var(--text); text-decoration: underline; margin-top: 4px; display: block; }
+
+        /* Inquiry & Graph Modals */
+        #inquiryModal, #inboxModal, #graphModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+        .modal-box { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .form-input { width: 100%; padding: 11px 12px; margin-bottom: 12px; background: var(--surface-card); color: var(--text); border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none; }
+        .notification-card { background: var(--surface-card); border: 1px solid var(--border); padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+        
+        footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--surface); text-align: center; font-size: 10px; padding: 8px 0; border-top: 1px solid var(--border); color: var(--muted); z-index: 999; }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <!-- Splash Screen -->
+    <div id="splashScreen">
+        <div class="splash-icon">🌵</div>
+        <div class="splash-title">Luxe Agro Business</div>
+    </div>
+
+    <header>
+        <div class="brand-area">
+            <div class="brand">🌾 Luxe Agro<br>Marketplace</div>
+        </div>
+        <div class="header-actions">
+            <button class="refresh-btn" onclick="location.reload()">🔄</button>
+            <button class="menu-btn" onclick="toggleDrawer()">Menu</button>
+        </div>
+    </header>
+
+    <div class="overlay" id="navOverlay" onclick="toggleDrawer()"></div>
+    <div class="drawer" id="navDrawer">
+        <div class="drawer-header">🌱 Navigation</div>
+        <div class="drawer-item" onclick="toggleTheme()">🌓 Toggle Theme</div>
+        <div class="drawer-item" onclick="openBuyerInbox()">💬 Notifications & Inbox</div>
+        <div class="drawer-item" onclick="openTermsModal()">📜 Terms & Policy</div>
+    </div>
+
+    <div class="container">
+        <input type="text" class="search-box" placeholder="Search verified agricultural commodities..." onkeyup="filterFeed(this.value)">
+        <div id="feedContainer"></div>
+    </div>
+
+    <!-- Hidden Terms & Policy Modal Container -->
+    <div id="termsModal">
+        <div class="terms-box">
+            <h3 style="color:var(--primary); margin-top:0; font-size:16px;">Terms & Policy</h3>
+            <p style="font-size:12px; color:var(--muted); line-height:1.4;">
+                <strong>Security of App:</strong> We prioritize data protection and secure connection protocols to ensure safe agricultural B2B networking.<br><br>
+                <strong>Community Support:</strong> We are a small organization and free fixtures will be coming soon for this app. If you support us by interacting with buyers and upvoting, it helps our platform grow tremendously.<br><br>
+                <strong>A Note (How this app helps you):</strong> This marketplace bridges producers and buyers directly, eliminating intermediaries and providing transparent pricing updates.
+            </p>
+            <div class="team-grid">
+                <div class="team-member">
+                    <img src="den.jpg" class="team-img" alt="Author" onerror="this.src='https://via.placeholder.com/110?text=Author'">
+                    <div class="team-label"><i><b>AUTHOR</b></i></div>
+                    <a href="tel:+260978456627" class="team-phone">+260 978456627</a>
+                </div>
+                <div class="team-member">
+                    <img src="andy.jpg" class="team-img" alt="FOUNDER" onerror="this.src='https://via.placeholder.com/110?text=Founder'">
+                    <div class="team-label"><i><b>FOUNDER</b></i></div>
+                    <a href="tel:+260977131986" class="team-phone">+260 97 7131986</a>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:14px;">
+                <button class="btn" style="flex:1; padding:10px;" onclick="acceptTerms()">Accept Terms & Policy</button>
+                <button class="btn" style="flex:1; background:var(--surface-card); border:1px solid var(--border); color:var(--text);" onclick="document.getElementById('termsModal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-Graphing Modal Container -->
+    <div id="graphModal">
+        <div class="modal-box" style="max-width:440px;">
+            <h3 style="color:var(--primary); margin-top:0; font-size:16px;" id="graphTitle">Price History Trend</h3>
+            <div style="position: relative; height:200px; width:100%;">
+                <canvas id="priceTrendChart"></canvas>
+            </div>
+            <div id="trendStatusText" style="text-align:center; font-weight:600; font-size:13px; margin-top:10px;"></div>
+            <button class="btn" style="width:100%; margin-top:12px; background:var(--surface-card); border:1px solid var(--border); color:var(--text);" onclick="document.getElementById('graphModal').style.display='none'">Close Graph</button>
+        </div>
+    </div>
+
+    <!-- Buyer Formal Inquiry Dialog -->
+    <div id="inquiryModal">
+        <div class="modal-box">
+            <h3 style="color:var(--primary); margin-top:0; font-size:16px;">Formal Buyer Inquiry</h3>
+            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Send formal specifications to producer.</p>
+            <input type="text" id="buyerNameInput" class="form-input" placeholder="Your Name / Company">
+            <textarea id="buyerDescInput" class="form-input" rows="2" placeholder="Product description / requirements..."></textarea>
+            <input type="file" id="buyerImgInput" class="form-input" accept="image/*" capture="environment">
+            <textarea id="buyerNoteInput" class="form-input" rows="2" placeholder="Additional specifications..."></textarea>
+            <div style="display:flex; gap:8px;">
+                <button class="btn" style="flex:1; padding:10px;" onclick="submitInquiry()">Send Inquiry</button>
+                <button class="btn" style="flex:1; background:var(--surface-card); border:1px solid var(--border); color:var(--text);" onclick="closeInquiryModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buyer Notifications & Inbox Modal -->
+    <div id="inboxModal">
+        <div class="modal-box" style="max-width:420px;">
+            <h3 style="color:var(--primary); margin-top:0; font-size:16px;">Buyer Inbox & Monthly Reports</h3>
+            <div id="buyerInboxContainer" style="max-height:280px; overflow-y:auto; margin-bottom:12px;"></div>
+            <button class="btn" style="width:100%; background:var(--surface-card); border:1px solid var(--border); color:var(--text);" onclick="document.getElementById('inboxModal').style.display='none'">Close Inbox</button>
+        </div>
+    </div>
+
+    <footer>Empowering agricultural B2B trade relationships. © 2026</footer>
+
+    <script>
+        const RTDB_URL = "https://luxe-business-534c5-default-rtdb.firebaseio.com";
+        let rawListings = [];
+        let activeListingForInquiry = null;
+        let chartInstance = null;
+        let lastBackPress = 0;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                let savedTheme = localStorage.getItem('luxeAgroTheme') || 'dark';
+                document.body.setAttribute('data-theme', savedTheme);
+
+                setTimeout(() => {
+                    let splash = document.getElementById('splashScreen');
+                    if (splash) {
+                        splash.style.opacity = '0';
+                        setTimeout(() => splash.style.display = 'none', 500);
+                    }
+                }, 1000);
+
+                loadMarketplace();
+            } catch (err) {
+                console.error("Initialization error:", err);
+            }
+        });
+
+        window.addEventListener('popstate', function (event) {
+            let modals = ['termsModal', 'graphModal', 'inquiryModal', 'inboxModal'];
+            let openModal = modals.find(id => {
+                let el = document.getElementById(id);
+                return el && el.style.display === 'flex';
+            });
+            
+            let drawer = document.getElementById('navDrawer');
+            let isDrawerOpen = drawer && drawer.classList.contains('open');
+
+            if (openModal) {
+                document.getElementById(openModal).style.display = 'none';
+                history.pushState(null, '', window.location.href);
+            } else if (isDrawerOpen) {
+                toggleDrawer();
+                history.pushState(null, '', window.location.href);
+            } else {
+                let currentTime = new Date().getTime();
+                if (currentTime - lastBackPress < 10000) {
+                    window.close();
+                } else {
+                    lastBackPress = currentTime;
+                    history.pushState(null, '', window.location.href);
+                }
+            }
+        });
+        try {
+            history.pushState(null, '', window.location.href);
+        } catch (e) {}
+
+        function toggleDrawer() {
+            let drawer = document.getElementById('navDrawer');
+            let overlay = document.getElementById('navOverlay');
+            if (!drawer || !overlay) return;
+            let isOpen = drawer.classList.contains('open');
+            drawer.classList.toggle('open', !isOpen);
+            overlay.style.display = isOpen ? 'none' : 'block';
+        }
+
+        function toggleTheme() {
+            let body = document.body;
+            let current = body.getAttribute('data-theme');
+            let next = current === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', next);
+            localStorage.setItem('luxeAgroTheme', next);
+            toggleDrawer();
+        }
+
+        function openTermsModal() {
+            toggleDrawer();
+            let modal = document.getElementById('termsModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function acceptTerms() {
+            localStorage.setItem('luxeAgroAcceptedTerms', 'true');
+            alert("Terms & Policy accepted successfully!");
+            let modal = document.getElementById('termsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function loadMarketplace() {
+            let feed = document.getElementById('feedContainer');
+            if (!feed) return;
+            feed.innerHTML = '<p style="color:var(--muted); text-align:center;">Loading verified feed...</p>';
+            try {
+                let res = await fetch(RTDB_URL + '/listings.json');
+                let data = await res.json();
+                rawListings = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        rawListings.push({ id: key, ...data[key] });
+                    });
+                }
+                renderFeed(rawListings);
+            } catch(e) {
+                feed.innerHTML = '<p style="color:var(--accent-red); text-align:center;">Connection error loading listings.</p>';
+            }
+        }
+
+        function renderFeed(items) {
+            let feed = document.getElementById('feedContainer');
+            if (!feed) return;
+            if (items.length === 0) {
+                feed.innerHTML = '<p style="color:var(--muted); text-align:center;">No active listings.</p>';
+                return;
+            }
+            feed.innerHTML = items.map(item => {
+                let imgContent = item.image ? `<img src="${item.image}" class="market-thumb" alt="Produce">` : `<div class="market-thumb">🏢</div>`;
+                let oldPriceHtml = item.oldPrice ? `<span class="old-price">K ${item.oldPrice}</span>` : '';
+                return `
+                    <div class="market-card">
+                        ${imgContent}
+                        <div class="market-details">
+                            <div class="market-title">${item.prodName}</div>
+                            <div class="market-price-area">
+                                <span class="market-price">K ${item.price} / ${item.unit}</span>
+                                ${oldPriceHtml}
+                            </div>
+                            <div class="market-meta">🏢 ${item.company} | 📍 ${item.location}</div>
+                            <div class="market-desc"><strong>Quality:</strong> ${item.quality || 'Standard'} <br><strong>Description:</strong> ${item.desc || 'None'}</div>
+                            <div class="btn-row">
+                                <a href="tel:${item.phone}" class="btn">📞 Call</a>
+                                <button class="btn" onclick="openInquiry('${item.id}', '${item.prodName}', '${item.producerId || ''}')">💬 Formal Inquiry</button>
+                                <button class="btn upvote-btn" onclick="upvoteListing('${item.id}')">👍 ${item.upvotes || 0}</button>
+                                <button class="btn" style="background:var(--surface-card); border:1px solid var(--border); color:var(--text);" onclick="showPriceGraph('${item.prodName}', ${item.price}, '${item.oldPrice || ''}')">📊 Trend Graph</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterFeed(query) {
+            let q = query.toLowerCase();
+            let filtered = rawListings.filter(i => i.prodName.toLowerCase().includes(q) || i.company.toLowerCase().includes(q));
+            renderFeed(filtered);
+        }
+
+        async function upvoteListing(id) {
+            let upvotedKey = `upvoted_public_${id}`;
+            let item = rawListings.find(i => i.id === id);
+            if (!item) return;
+
+            if (localStorage.getItem(upvotedKey)) {
+                item.upvotes = Math.max(0, (item.upvotes || 1) - 1);
+                localStorage.removeItem(upvotedKey);
+            } else {
+                item.upvotes = (item.upvotes || 0) + 1;
+                localStorage.setItem(upvotedKey, 'true');
+            }
+
+            await fetch(`${RTDB_URL}/listings/${id}/upvotes.json`, {
+                method: 'PUT',
+                body: JSON.stringify(item.upvotes)
+            });
+
+            renderFeed(rawListings);
+        }
+
+        function showPriceGraph(prodName, currentPrice, oldPrice) {
+            let titleEl = document.getElementById('graphTitle');
+            let modalEl = document.getElementById('graphModal');
+            if (titleEl) titleEl.innerText = `${prodName} - Price History`;
+            if (modalEl) modalEl.style.display = 'flex';
+
+            let today = new Date().toLocaleDateString();
+            let pastDate = new Date(Date.now() - 86400000*3).toLocaleDateString();
+
+            let oldVal = oldPrice ? Number(oldPrice) : Number(currentPrice);
+            let newVal = Number(currentPrice);
+
+            let prices = [oldVal, newVal];
+            let dates = [pastDate, today];
+
+            let statusEl = document.getElementById('trendStatusText');
+            if (statusEl) {
+                if (newVal >= oldVal) {
+                    statusEl.innerHTML = `<span style="color:var(--primary);">Prices are stable</span>`;
+                } else {
+                    statusEl.innerHTML = `<span style="color:var(--accent-red);">Prices are unstable</span>`;
+                }
+            }
+
+            let canvasEl = document.getElementById('priceTrendChart');
+            if (!canvasEl) return;
+            let ctx = canvasEl.getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Price (K)',
+                        data: prices,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+                    },
+                    plugins: { legend: { labels: { color: '#f8fafc' } } }
+                }
+            });
+        }
+
+        function openInquiry(id, name, producerId) {
+            activeListingForInquiry = { id, name, producerId };
+            let modal = document.getElementById('inquiryModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeInquiryModal() {
+            let modal = document.getElementById('inquiryModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitInquiry() {
+            let nameEl = document.getElementById('buyerNameInput');
+            let descEl = document.getElementById('buyerDescInput');
+            let noteEl = document.getElementById('buyerNoteInput');
+            let fileEl = document.getElementById('buyerImgInput');
+            if (!nameEl) return;
+
+            let buyerName = nameEl.value.trim();
+            let buyerDesc = descEl ? descEl.value.trim() : '';
+            let buyerNote = noteEl ? noteEl.value.trim() : '';
+            let fileInput = fileEl && fileEl.files ? fileEl.files[0] : null;
+
+            if (!buyerName) {
+                alert("Please enter your name/company.");
+                return;
+            }
+
+            let reader = new FileReader();
+            reader.onload = async function(e) {
+                let buyerImg = e.target.result || "";
+                let notificationText = `${buyerImg ? '<img src="'+buyerImg+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">' : '🏢 '}Hi ${buyerName} I'm currently having ${activeListingForInquiry.name}. Description: ${buyerDesc}. Note: ${buyerNote}`;
+                
+                await fetch(`${RTDB_URL}/notifications.json`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        listingId: activeListingForInquiry.id, 
+                        producerId: activeListingForInquiry.producerId || 'general',
+                        buyerId: 'public_user',
+                        text: notificationText, 
+                        buyerName, 
+                        timestamp: Date.now() 
+                    })
+                });
+
+                alert("Formal inquiry transmitted successfully!");
+                closeInquiryModal();
+            };
+
+            if (fileInput) {
+                reader.readAsDataURL(fileInput);
+            } else {
+                reader.onload({ target: { result: "" } });
+            }
+        }
+
+        async function openBuyerInbox() {
+            toggleDrawer();
+            let container = document.getElementById('buyerInboxContainer');
+            let inboxModal = document.getElementById('inboxModal');
+            if (!container || !inboxModal) return;
+
+            container.innerHTML = '<p style="color:var(--muted); text-align:center;">Loading reports...</p>';
+            inboxModal.style.display = 'flex';
+
+            let htmlContent = '';
+
+            try {
+                let resListings = await fetch(`${RTDB_URL}/listings.json`);
+                let listData = await resListings.json();
+                if (listData) {
+                    htmlContent += `<h4 style="color:var(--primary); font-size:14px; margin:4px 0 4px 0;">Monthly Price Change Reports</h4>`;
+                    Object.keys(listData).forEach(key => {
+                        let item = listData[key];
+                        let status = (item.oldPrice && Number(item.price) < Number(item.oldPrice)) ? "Prices are unstable" : "Prices are stable";
+                        let colorStyle = status.includes("unstable") ? "color:var(--accent-red);" : "color:var(--primary);";
+                        let dateStr = new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+                        htmlContent += `
+                            <div class="notification-card">
+                                <div style="font-weight:700; color:var(--text); margin-bottom:2px;">Buyer/Seller: ${item.company}</div>
+                                <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">Report Period: ${dateStr} | Product: ${item.prodName}</div>
+                                <div style="${colorStyle} font-weight:600;">Status: ${status} (Current: K ${item.price})</div>
+                            </div>
+                        `;
+                    });
+                }
+            } catch(e) {}
+
+            container.innerHTML = htmlContent || '<p style="color:var(--muted); text-align:center;">No reports available.</p>';
+        }
+    </script>
+</body>
+</html>
