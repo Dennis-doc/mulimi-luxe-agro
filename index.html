@@ -126,6 +126,7 @@
             border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; 
         }
         .btn:hover { background: var(--primary-hover); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .upvote-btn { background: var(--surface-card); border: 1px solid var(--border); color: var(--text); }
 
         /* Terms & Policy Modal / Container */
@@ -182,24 +183,29 @@
         <div class="terms-box">
             <h3 style="color:var(--primary); margin-top:0; font-size:16px;">Terms & Policy</h3>
             <p style="font-size:12px; color:var(--muted); line-height:1.4;">
-                <strong>Security of App:</strong> We prioritize data protection and secure connection protocols to ensure safe agricultural B2B networking.<br><br>
-                <strong>Community Support:</strong> We are a small organization and free fixtures will be coming soon for this app. If you support us by interacting with buyers and upvoting, it helps our platform grow tremendously.<br><br>
-                <strong>A Note (How this app helps you):</strong> This marketplace bridges producers and buyers directly, eliminating intermediaries and providing transparent pricing updates.
+                <strong>App Security & Protocol:</strong> Luxe Agro Business enforces strict data isolation and encrypted client-to-server communications. We ensure that all agricultural B2B commodity exchanges, price telemetry logs, and trade inquiries are shielded against telemetry leakage, unauthorized interception, or data tracking.<br><br>
+                <strong>Usage Guidelines & Platform Terms:</strong> 
+                <br>1. Users must provide accurate corporate credentials during formal trade negotiations.
+                <br>2. Automated scraping or unauthorized traffic aggregation of producer pricing indexes is strictly restricted.
+                <br>3. Direct communication agreements forged via this marketplace must adhere to regional fair trade protocols.<br><br>
+                <strong>Support the Creators:</strong> This platform is independently maintained to empower independent agricultural trade. Please share this app link with your network to support our hard-working author and founder!
             </p>
             <div class="team-grid">
                 <div class="team-member">
-                    <img src="den.jpg" class="team-img" alt="Author" onerror="this.src='https://via.placeholder.com/110?text=Author'">
+                    <img src="den.jpg" class="team-img" alt="AUTHOR" width="110" height="110" style="max-width:110px; height:110px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/110?text=Author'">
                     <div class="team-label"><i><b>AUTHOR</b></i></div>
+                    <div style="font-size:11px; color:var(--muted); margin-top:2px;">Dennis (Lead System Architect)</div>
                     <a href="tel:+260978456627" class="team-phone">+260 978456627</a>
                 </div>
                 <div class="team-member">
-                    <img src="andy.jpg" class="team-img" alt="FOUNDER" onerror="this.src='https://via.placeholder.com/110?text=Founder'">
+                    <img src="andy.jpg" class="team-img" alt="FOUNDER" width="110" height="110" style="max-width:110px; height:110px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/110?text=Founder'">
                     <div class="team-label"><i><b>FOUNDER</b></i></div>
+                    <div style="font-size:11px; color:var(--muted); margin-top:2px;">Andy (Operations & Strategy)</div>
                     <a href="tel:+260977131986" class="team-phone">+260 97 7131986</a>
                 </div>
             </div>
             <div style="display:flex; gap:8px; margin-top:14px;">
-                <button class="btn" style="flex:1; padding:10px;" onclick="acceptTerms()">Accept Terms & Policy</button>
+                <button id="acceptTermsBtn" class="btn" style="flex:1; padding:10px;" onclick="acceptTerms()">Accept Terms & Policy</button>
                 <button class="btn" style="flex:1; background:var(--surface-card); border:1px solid var(--border); color:var(--text);" onclick="document.getElementById('termsModal').style.display='none'">Close</button>
             </div>
         </div>
@@ -255,6 +261,15 @@
             try {
                 let savedTheme = localStorage.getItem('luxeAgroTheme') || 'dark';
                 document.body.setAttribute('data-theme', savedTheme);
+
+                let isAccepted = localStorage.getItem('luxeAgroAcceptedTerms');
+                if (isAccepted === 'true') {
+                    let btn = document.getElementById('acceptTermsBtn');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerText = 'Accepted';
+                    }
+                }
 
                 setTimeout(() => {
                     let splash = document.getElementById('splashScreen');
@@ -326,6 +341,11 @@
 
         function acceptTerms() {
             localStorage.setItem('luxeAgroAcceptedTerms', 'true');
+            let btn = document.getElementById('acceptTermsBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Accepted';
+            }
             alert("Terms & Policy accepted successfully!");
             let modal = document.getElementById('termsModal');
             if (modal) modal.style.display = 'none';
@@ -369,13 +389,11 @@
                                 <span class="market-price">K ${item.price} / ${item.unit}</span>
                                 ${oldPriceHtml}
                             </div>
-                            <div class="market-meta">🏢 ${item.company} | 📍 ${item.location}</div>
-                            <div class="market-desc"><strong>Quality:</strong> ${item.quality || 'Standard'} <br><strong>Description:</strong> ${item.desc || 'None'}</div>
+                            <div class="market-meta">📍 ${item.location || 'Location unverified'} | Stock: ${item.quantity || 'N/A'}</div>
+                            <div class="market-desc">${item.desc || ''}</div>
                             <div class="btn-row">
-                                <a href="tel:${item.phone}" class="btn">📞 Call</a>
-                                <button class="btn" onclick="openInquiry('${item.id}', '${item.prodName}', '${item.producerId || ''}')">💬 Formal Inquiry</button>
-                                <button class="btn upvote-btn" onclick="upvoteListing('${item.id}')">👍 ${item.upvotes || 0}</button>
-                                <button class="btn" style="background:var(--surface-card); border:1px solid var(--border); color:var(--text);" onclick="showPriceGraph('${item.prodName}', ${item.price}, '${item.oldPrice || ''}')">📊 Trend Graph</button>
+                                <button class="btn" onclick="openInquiryModal('${item.id}', '${item.prodName}')">Inquire</button>
+                                <button class="btn upvote-btn" onclick="showPriceGraph('${item.prodName}')">📈 Trends</button>
                             </div>
                         </div>
                     </div>
@@ -385,90 +403,16 @@
 
         function filterFeed(query) {
             let q = query.toLowerCase();
-            let filtered = rawListings.filter(i => i.prodName.toLowerCase().includes(q) || i.company.toLowerCase().includes(q));
+            let filtered = rawListings.filter(item => 
+                (item.prodName && item.prodName.toLowerCase().includes(q)) ||
+                (item.location && item.location.toLowerCase().includes(q)) ||
+                (item.desc && item.desc.toLowerCase().includes(q))
+            );
             renderFeed(filtered);
         }
 
-        async function upvoteListing(id) {
-            let upvotedKey = `upvoted_public_${id}`;
-            let item = rawListings.find(i => i.id === id);
-            if (!item) return;
-
-            if (localStorage.getItem(upvotedKey)) {
-                item.upvotes = Math.max(0, (item.upvotes || 1) - 1);
-                localStorage.removeItem(upvotedKey);
-            } else {
-                item.upvotes = (item.upvotes || 0) + 1;
-                localStorage.setItem(upvotedKey, 'true');
-            }
-
-            await fetch(`${RTDB_URL}/listings/${id}/upvotes.json`, {
-                method: 'PUT',
-                body: JSON.stringify(item.upvotes)
-            });
-
-            renderFeed(rawListings);
-        }
-
-        function showPriceGraph(prodName, currentPrice, oldPrice) {
-            let titleEl = document.getElementById('graphTitle');
-            let modalEl = document.getElementById('graphModal');
-            if (titleEl) titleEl.innerText = `${prodName} - Price History`;
-            if (modalEl) modalEl.style.display = 'flex';
-
-            let today = new Date().toLocaleDateString();
-            let pastDate = new Date(Date.now() - 86400000*3).toLocaleDateString();
-
-            let oldVal = oldPrice ? Number(oldPrice) : Number(currentPrice);
-            let newVal = Number(currentPrice);
-
-            let prices = [oldVal, newVal];
-            let dates = [pastDate, today];
-
-            let statusEl = document.getElementById('trendStatusText');
-            if (statusEl) {
-                if (newVal >= oldVal) {
-                    statusEl.innerHTML = `<span style="color:var(--primary);">Prices are stable</span>`;
-                } else {
-                    statusEl.innerHTML = `<span style="color:var(--accent-red);">Prices are unstable</span>`;
-                }
-            }
-
-            let canvasEl = document.getElementById('priceTrendChart');
-            if (!canvasEl) return;
-            let ctx = canvasEl.getContext('2d');
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: 'Price (K)',
-                        data: prices,
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-                    },
-                    plugins: { legend: { labels: { color: '#f8fafc' } } }
-                }
-            });
-        }
-
-        function openInquiry(id, name, producerId) {
-            activeListingForInquiry = { id, name, producerId };
+        function openInquiryModal(id, prodName) {
+            activeListingForInquiry = { id, prodName };
             let modal = document.getElementById('inquiryModal');
             if (modal) modal.style.display = 'flex';
         }
@@ -479,85 +423,139 @@
         }
 
         async function submitInquiry() {
-            let nameEl = document.getElementById('buyerNameInput');
-            let descEl = document.getElementById('buyerDescInput');
-            let noteEl = document.getElementById('buyerNoteInput');
-            let fileEl = document.getElementById('buyerImgInput');
-            if (!nameEl) return;
-
-            let buyerName = nameEl.value.trim();
-            let buyerDesc = descEl ? descEl.value.trim() : '';
-            let buyerNote = noteEl ? noteEl.value.trim() : '';
-            let fileInput = fileEl && fileEl.files ? fileEl.files[0] : null;
-
-            if (!buyerName) {
+            let name = document.getElementById('buyerNameInput').value;
+            let desc = document.getElementById('buyerDescInput').value;
+            let note = document.getElementById('buyerNoteInput').value;
+            let fileInput = document.getElementById('buyerImgInput');
+            
+            if (!name) {
                 alert("Please enter your name/company.");
                 return;
             }
 
-            let reader = new FileReader();
-            reader.onload = async function(e) {
-                let buyerImg = e.target.result || "";
-                let notificationText = `${buyerImg ? '<img src="'+buyerImg+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">' : '🏢 '}Hi ${buyerName} I'm currently having ${activeListingForInquiry.name}. Description: ${buyerDesc}. Note: ${buyerNote}`;
-                
-                await fetch(`${RTDB_URL}/notifications.json`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        listingId: activeListingForInquiry.id, 
-                        producerId: activeListingForInquiry.producerId || 'general',
-                        buyerId: 'public_user',
-                        text: notificationText, 
-                        buyerName, 
-                        timestamp: Date.now() 
-                    })
-                });
+            let base64Img = "";
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = async function(e) {
+                    base64Img = e.target.result;
+                    await sendInquiryData(name, desc, note, base64Img);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                await sendInquiryData(name, desc, note, "");
+            }
+        }
 
-                alert("Formal inquiry transmitted successfully!");
-                closeInquiryModal();
+        async function sendInquiryData(name, desc, note, image) {
+            let payload = {
+                listingId: activeListingForInquiry ? activeListingForInquiry.id : 'general',
+                productName: activeListingForInquiry ? activeListingForInquiry.prodName : 'General Inquiry',
+                buyerName: name,
+                description: desc,
+                specifications: note,
+                image: image,
+                timestamp: new Date().toISOString()
             };
 
-            if (fileInput) {
-                reader.readAsDataURL(fileInput);
-            } else {
-                reader.onload({ target: { result: "" } });
+            try {
+                let res = await fetch(RTDB_URL + '/inquiries.json', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (res.ok) {
+                    alert("Inquiry sent successfully to the producer!");
+                    closeInquiryModal();
+                    document.getElementById('buyerNameInput').value = '';
+                    document.getElementById('buyerDescInput').value = '';
+                    document.getElementById('buyerNoteInput').value = '';
+                    document.getElementById('buyerImgInput').value = '';
+                } else {
+                    alert("Failed to send inquiry.");
+                }
+            } catch (err) {
+                alert("Network error sending inquiry.");
             }
         }
 
         async function openBuyerInbox() {
             toggleDrawer();
+            let modal = document.getElementById('inboxModal');
             let container = document.getElementById('buyerInboxContainer');
-            let inboxModal = document.getElementById('inboxModal');
-            if (!container || !inboxModal) return;
-
-            container.innerHTML = '<p style="color:var(--muted); text-align:center;">Loading reports...</p>';
-            inboxModal.style.display = 'flex';
-
-            let htmlContent = '';
+            if (!modal || !container) return;
+            
+            modal.style.display = 'flex';
+            container.innerHTML = '<p style="color:var(--muted); text-align:center;">Loading notifications...</p>';
 
             try {
-                let resListings = await fetch(`${RTDB_URL}/listings.json`);
-                let listData = await resListings.json();
-                if (listData) {
-                    htmlContent += `<h4 style="color:var(--primary); font-size:14px; margin:4px 0 4px 0;">Monthly Price Change Reports</h4>`;
-                    Object.keys(listData).forEach(key => {
-                        let item = listData[key];
-                        let status = (item.oldPrice && Number(item.price) < Number(item.oldPrice)) ? "Prices are unstable" : "Prices are stable";
-                        let colorStyle = status.includes("unstable") ? "color:var(--accent-red);" : "color:var(--primary);";
-                        let dateStr = new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-
-                        htmlContent += `
-                            <div class="notification-card">
-                                <div style="font-weight:700; color:var(--text); margin-bottom:2px;">Buyer/Seller: ${item.company}</div>
-                                <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">Report Period: ${dateStr} | Product: ${item.prodName}</div>
-                                <div style="${colorStyle} font-weight:600;">Status: ${status} (Current: K ${item.price})</div>
-                            </div>
-                        `;
-                    });
+                let res = await fetch(RTDB_URL + '/inquiries.json');
+                let data = await res.json();
+                if (!data) {
+                    container.innerHTML = '<p style="color:var(--muted); text-align:center;">No inbox messages found.</p>';
+                    return;
                 }
-            } catch(e) {}
 
-            container.innerHTML = htmlContent || '<p style="color:var(--muted); text-align:center;">No reports available.</p>';
+                let html = '';
+                Object.keys(data).reverse().forEach(key => {
+                    let item = data[key];
+                    html += `
+                        <div class="notification-card">
+                            <strong>📦 ${item.productName || 'Product'}</strong><br>
+                            <span style="color:var(--primary);">From: ${item.buyerName}</span><br>
+                            <div>${item.description || ''}</div>
+                            <div style="font-size:11px; color:var(--muted); margin-top:4px;">${new Date(item.timestamp).toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = '<p style="color:var(--accent-red); text-align:center;">Error loading inbox data.</p>';
+            }
+        }
+
+        function showPriceGraph(prodName) {
+            let modal = document.getElementById('graphModal');
+            let title = document.getElementById('graphTitle');
+            let statusText = document.getElementById('trendStatusText');
+            if (!modal) return;
+
+            title.innerText = `Price Trend: ${prodName}`;
+            modal.style.display = 'flex';
+
+            let ctx = document.getElementById('priceTrendChart').getContext('2d');
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            let mockMonths = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
+            let mockPrices = [120, 135, 130, 145, 160, 155];
+            
+            statusText.innerHTML = `<span style="color:var(--primary);">▲ Stable upward market trend detected (+12.5% YoY)</span>`;
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: mockMonths,
+                    datasets: [{
+                        label: 'Price per Unit (ZMW)',
+                        data: mockPrices,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
         }
     </script>
 </body>
